@@ -1,5 +1,5 @@
-# Mustard Tools script
-# https://github.com/Mustard2/MustardTools
+# Mustard Menu Creator addon
+# https://github.com/Mustard2/MenuCreator
 
 bl_info = {
     "name": "Menu Creator",
@@ -8,6 +8,7 @@ bl_info = {
     "version": (0, 0, 1),
     "blender": (2, 91, 0),
     "warning": "",
+    "wiki_url": "https://github.com/Mustard2/MenuCreator",
     "category": "User Interface",
 }
 
