@@ -18,6 +18,9 @@ This addon can be useful both for Blender users, to expose the properties in a h
 
 - outfit functionality: as an extension of the collection functionality, it is possible to enable auto-masking of the objects listed in the menu. This means that you can define a Body object, and its mask modifiers will be activated when you show an Object in the collection list
 
+## Installation
+Download the repository as a zip file (or clone it locally), and then install the .py file (**not the .zip file, you must unzip it and use the Python file!**)
+
 ## Instructions
 - create a Menu clicking on an Object and initializing the Menu
 - add properties simply right clicking on any Blender property, and clicking Add to the Menu (note that operators are not supported at the moment, and can not be added to the Menu)
