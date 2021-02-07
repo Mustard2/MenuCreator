@@ -1,14 +1,6 @@
 # Mustard Menu Creator addon
 # https://github.com/Mustard2/MenuCreator
 
-# 0.0.2
-# - feature: delete Collection type sections
-# - feature: delete collections inside a Collection type section
-# - feature: create a collapse button for the sections
-# - fix: the addon does not throw errors when a Collection is deleted (thanks to DR)
-# - fix: section order that required more input to actually move a section
-# - fix: using Outfit collection type without Body might lead to an error
-
 bl_info = {
     "name": "Menu Creator",
     "description": "Create a custom menu for each Object. To add properties or collections, just right click on the properties and hit Add property to the Menu",
@@ -889,6 +881,7 @@ class MC_SectionSettings(bpy.types.Operator):
         
         self.name_edit = self.name
         self.ID = mc_find_index_section(sec_obj,[self.name,self.icon])
+        self.collapsable = sec_obj[self.ID].collapsable
         self.collections_enable_global_smoothcorrection = sec_obj[self.ID].collections_enable_global_smoothcorrection
         self.collections_enable_global_shrinkwrap = sec_obj[self.ID].collections_enable_global_shrinkwrap
         self.collections_enable_global_mask = sec_obj[self.ID].collections_enable_global_mask
