@@ -1,11 +1,19 @@
 # Mustard Menu Creator addon
 # https://github.com/Mustard2/MenuCreator
 
+# 0.0.2
+# - feature: delete Collection type sections
+# - feature: delete collections inside a Collection type section
+# - feature: create a collapse button for the sections
+# - fix: the addon does not throw errors when a Collection is deleted (thanks to DR)
+# - fix: section order that required more input to actually move a section
+# - fix: using Outfit collection type without Body might lead to an error
+
 bl_info = {
     "name": "Menu Creator",
     "description": "Create a custom menu for each Object. To add properties or collections, just right click on the properties and hit Add property to the Menu",
     "author": "Mustard",
-    "version": (0, 0, 1),
+    "version": (0, 0, 2),
     "blender": (2, 91, 0),
     "warning": "",
     "wiki_url": "https://github.com/Mustard2/MenuCreator",
@@ -21,6 +29,7 @@ import time
 import math
 from bpy.types import Header, Menu, Panel
 from bpy.props import *
+from bpy.app.handlers import persistent
 from mathutils import Vector, Color
 import webbrowser
 
@@ -29,7 +38,7 @@ import webbrowser
 # Arrays for ENUM properties
 # Array to store different section type
 mc_section_type_list = [
-                ("DEFAULT","Default","A simple collection of properties that can be added right clicking on fields -> Add Property to the Menu"),
+                ("DEFAULT","Standard","A simple collection of properties that can be added right clicking on fields -> Add Property to the Menu"),
                 ("COLLECTION","Collection List","Right clicking on them in the Outliner, you can add collections whose elements can be shown/hidden in the Menu. Only one collection will be shown at the same time.\nIdeal for: Outfit lists","OUTLINER_COLLECTION",1)
             ]
 # Array to store possible icons to be used by properties and sections
@@ -109,6 +118,17 @@ class MCCollectionItem(bpy.types.PropertyGroup):
     collection : bpy.props.PointerProperty(name="Collection",type=bpy.types.Collection)
 bpy.utils.register_class(MCCollectionItem)
 
+# Function to update the collapsed status if the collapsed section property is changed
+def mc_sections_collapsed_update(self, context):
+    
+    items = []
+    
+    i = 0
+    if not self.collapsable:
+        self.collapsed = False
+        
+    return items
+
 # Function to create an array of tuples for enum collections
 def mc_collections_list(self, context):
     
@@ -116,8 +136,14 @@ def mc_collections_list(self, context):
     
     i = 0
     for el in self.collections:
-        items.append( (el.collection.name,el.collection.name,el.collection.name) )
-        i = i + 1
+        if hasattr(el.collection, 'name'):
+        #try:
+            items.append( (el.collection.name,el.collection.name,el.collection.name) )
+            i = i + 1
+        #except:
+        #    self.collections.remove(i)
+        #    items = mc_collections_list(self, context)
+        #    break
         
     return items
 
@@ -180,6 +206,10 @@ class MCSectionItem(bpy.types.PropertyGroup):
     name : bpy.props.StringProperty(name="Section Name")
     icon : bpy.props.StringProperty(name="Section Icon", default="")
     type : bpy.props.StringProperty(name="Section Type", default="DEFAULT")
+    collapsable : bpy.props.BoolProperty(name="Section Collapsable", default=False, update=mc_sections_collapsed_update)
+    
+    # Global section option enforcer
+    collapsed : bpy.props.BoolProperty(name="", default = False, description="")
     
     # COLLECTION type options
     collections_enable_global_smoothcorrection: bpy.props.BoolProperty(default=False)
@@ -701,9 +731,11 @@ class MC_AddSection(bpy.types.Operator):
     bl_options = {'UNDO'}
     
     name : bpy.props.StringProperty(name='Name',
-        description="Choose the name of the section")
+        description="Choose the name of the section", default = "Section")
     icon : bpy.props.EnumProperty(name='Icon',
         description="Choose the icon.\nNote that the icon name MUST respect Blender convention. All the icons can be found in the Icon Viewer default Blender addon",items=mc_icon_list)
+    collapsable : bpy.props.BoolProperty(name="Collapsable",
+        description="Add a collapse button near the name of the section")
     type : bpy.props.EnumProperty(name='Type',
         description="Choose the section type",items=mc_section_type_list)
 
@@ -732,14 +764,15 @@ class MC_AddSection(bpy.types.Operator):
                 add_item.name = self.name
                 add_item.type = self.type
                 add_item.icon = self.icon
+                add_item.collapsable = self.collapsable
                 add_item.id = sec_len
             
                 self.report({'INFO'}, 'Menu Creator - Section \'' + self.name +'\' created.')
             else:
-                self.report({'WARNING'}, 'Menu Creator - Cannot create a section with same name.')
+                self.report({'WARNING'}, 'Menu Creator - Cannot create sections with same name.')
         
         else:
-            self.report({'ERROR'}, 'Menu Creator - Cannot create a section with this name.')
+            self.report({'ERROR'}, 'Menu Creator - Cannot create sections with this name.')
         
         return {'FINISHED'}
     
@@ -758,9 +791,29 @@ class MC_AddSection(bpy.types.Operator):
         
         layout = self.layout
         
-        layout.prop(self, "name")
-        layout.prop(self, "icon")
-        layout.prop(self, "type")
+        scale = 3.0
+        
+        row=layout.row()
+        row.label(text="Name:")
+        row.scale_x=scale
+        row.prop(self, "name", text="")
+        
+        row=layout.row()
+        row.label(text="Icon:")
+        row.scale_x=scale
+        row.prop(self, "icon", text="")
+        
+        row=layout.row()
+        row.label(text="")
+        row.scale_x=scale
+        row.prop(self, "collapsable")
+        
+        layout.separator()
+        
+        row=layout.row()
+        row.label(text="Type:")
+        row.scale_x=scale
+        row.prop(self, "type", text="")
 
 # Section Property settings
 class MC_SectionSettings(bpy.types.Operator):
@@ -774,6 +827,8 @@ class MC_SectionSettings(bpy.types.Operator):
         description="Choose the name of the section")
     icon : bpy.props.EnumProperty(name='Icon',
         description="Choose the icon.\nNote that the icon name MUST respect Blender convention. All the icons can be found in the Icon Viewer default Blender addon.",items=mc_icon_list)
+    collapsable : bpy.props.BoolProperty(name="Collapsable",
+        description="Add a collapse button near the name of the section")
     type : bpy.props.EnumProperty(name='Type',
         description="The Section type can not be changed after creation",items=mc_section_type_list)
     
@@ -811,6 +866,7 @@ class MC_SectionSettings(bpy.types.Operator):
            
             sec_obj[i].name = self.name_edit
             sec_obj[i].icon = self.icon
+            sec_obj[i].collapsable = self.collapsable
             sec_obj[i].collections_enable_global_smoothcorrection = self.collections_enable_global_smoothcorrection
             sec_obj[i].collections_enable_global_shrinkwrap = self.collections_enable_global_shrinkwrap
             sec_obj[i].collections_enable_global_mask = self.collections_enable_global_mask
@@ -851,10 +907,25 @@ class MC_SectionSettings(bpy.types.Operator):
             obj = context.active_object
         sec_obj = obj.mc_sections
         
+        scale = 3.0
+        
         layout = self.layout
         
-        layout.prop(self, "name_edit")
-        layout.prop(self, "icon")
+        row=layout.row()
+        row.label(text="Name:")
+        row.scale_x=scale
+        row.prop(self, "name_edit", text="")
+        
+        row=layout.row()
+        row.label(text="Icon:")
+        row.scale_x=scale
+        row.prop(self, "icon", text="")
+        
+        row=layout.row()
+        row.label(text="")
+        row.scale_x=scale
+        row.prop(self, "collapsable")
+        
         layout.separator()
         col = layout.column()
         col.enabled = False
@@ -909,7 +980,7 @@ class MC_SwapSection(bpy.types.Operator):
         
         #item1 = [col[i].name,col[i].icon,col[i].type,col[i].collections]
             
-        if self.mod and i > 0:
+        if self.mod and i > 1:
             j = mc_find_index_section_fromID(col, i-1)
             col[sec_index].id = i-1
             col[j].id = i
@@ -999,10 +1070,47 @@ class MC_CollectionObjectVisibility(bpy.types.Operator):
         i = mc_find_index_section(sec_obj,[self.sec,''])
         
         if sec_obj[i].outfit_enable:
-            for modifier in sec_obj[i].outfit_body.modifiers:
-                if modifier.type == "MASK" and self.obj in modifier.name and sec_obj[i].collections_global_mask:
-                    modifier.show_viewport = not bpy.data.objects[self.obj].hide_viewport
-                    modifier.show_render = not bpy.data.objects[self.obj].hide_viewport
+            if sec_obj[i].outfit_body:
+                for modifier in sec_obj[i].outfit_body.modifiers:
+                    if modifier.type == "MASK" and self.obj in modifier.name and sec_obj[i].collections_global_mask:
+                        modifier.show_viewport = not bpy.data.objects[self.obj].hide_viewport
+                        modifier.show_render = not bpy.data.objects[self.obj].hide_viewport
+            else:
+                self.report({'WARNING'}, 'Menu Creator - Outfit Body has not been specified.')
+        
+        return {'FINISHED'}
+
+# Operator to delete a collection
+class MC_RemoveCollection(bpy.types.Operator):
+    """Remove the selected collection from the Menu.\nThe collection will NOT be deleted"""
+    bl_idname = "ops.mc_deletecollection"
+    bl_label = "Remove the selected collection from the menu"
+    bl_options = {'UNDO'}
+    
+    col : bpy.props.StringProperty()
+    sec : bpy.props.StringProperty()
+
+    def execute(self, context):
+        
+        settings = bpy.context.scene.mc_settings
+        if settings.em_fixobj:
+            obj = settings.em_fixobj_pointer
+        else:
+            obj = context.active_object
+        sec_obj = obj.mc_sections
+        
+        sec_index = mc_find_index_section(sec_obj,[self.sec])
+        
+        i = 0
+        for el in sec_obj[sec_index].collections:
+            print(el.collection.name)
+            print(self.col)
+            if el.collection.name == self.col:
+                sec_obj[sec_index].collections.remove(i)
+                break
+            i = i + 1
+        
+        self.report({'INFO'}, 'Menu Creator - Collection removed from the Menu.')
         
         return {'FINISHED'}
 
@@ -1153,6 +1261,8 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                         continue
                     else:
                         row = layout.row(align=False)
+                        if sec.collapsable:
+                            row.prop(sec, "collapsed", icon="TRIA_DOWN" if not sec.collapsed else "TRIA_RIGHT", icon_only=True, emboss=False)
                         if sec.icon == "NONE":
                             row.label(text=sec.name)
                         else:
@@ -1166,74 +1276,77 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                                 ssett_button.icon = sec.icon
                                 ssett_button.type = sec.type
                             
-                            row2 = row.row(align=True)
-                            sup_button = row2.operator("ops.mc_swapsections", icon="TRIA_UP", text="")
-                            sup_button.mod = True
-                            sup_button.name = sec.name
-                            sup_button.icon = sec.icon
-                            sdown_button = row2.operator("ops.mc_swapsections", icon="TRIA_DOWN", text="")
-                            sdown_button.mod = False
-                            sdown_button.name = sec.name
-                            sdown_button.icon = sec.icon
-                        
-                        box = layout.box()
-                        if sec_empty and sec.name != "Unsorted":
-                            row = box.row(align=False)
-                            row.label(text="Section Empty", icon="ERROR")
-                            row.operator("ops.mc_deletesection",text="",icon="X").name = sec.name
-                    
-                    for el in mc_col:
-                        
-                        if el.section == sec.name:
-                        
-                            el_index = mc_find_index(mc_col,[el.name,el.path,el.id])
-                            
-                            if obj.mc_edit_enable:
-                                
-                                row = box.row(align=False)
-                                if el.icon !="NONE":
-                                    row.label(text=el.name,icon=el.icon)
-                                else:
-                                    row.label(text=el.name)
-                                
-                                sett_button = row.operator("ops.mc_propsettings", icon="PREFERENCES", text="")
-                                sett_button.name = el.name
-                                sett_button.path = el.path
-                                sett_button.id = el.id
-                                sett_button.icon = el.icon
-                                sett_button.section = el.section
-                                
                                 row2 = row.row(align=True)
-                                up_button = row2.operator("ops.mc_swapprops", icon="TRIA_UP", text="")
-                                up_button.mod = True
-                                up_button.name = el.name
-                                up_button.path = el.path
-                                up_button.id = el.id
-                                down_button = row2.operator("ops.mc_swapprops", icon="TRIA_DOWN", text="")
-                                down_button.mod = False
-                                down_button.name = el.name
-                                down_button.path = el.path
-                                down_button.id = el.id
+                                sup_button = row2.operator("ops.mc_swapsections", icon="TRIA_UP", text="")
+                                sup_button.mod = True
+                                sup_button.name = sec.name
+                                sup_button.icon = sec.icon
+                                sdown_button = row2.operator("ops.mc_swapsections", icon="TRIA_DOWN", text="")
+                                sdown_button.mod = False
+                                sdown_button.name = sec.name
+                                sdown_button.icon = sec.icon
+                        
+                        if not sec.collapsed:
+                            box = layout.box()
+                            if sec_empty and sec.name != "Unsorted":
+                                row = box.row(align=False)
+                                row.label(text="Section Empty", icon="ERROR")
+                                row.operator("ops.mc_deletesection",text="",icon="X").name = sec.name
+                    
+                    if not sec.collapsed:
+                        
+                        for el in mc_col:
+                            
+                            if el.section == sec.name:
+                            
+                                el_index = mc_find_index(mc_col,[el.name,el.path,el.id])
                                 
-                                if el.hide:
-                                    row.prop(el, "hide", text="", icon = "HIDE_ON")
-                                else:
-                                    row.prop(el, "hide", text="", icon = "HIDE_OFF")
-                                
-                                del_button = row.operator("ops.mc_removeproperty", icon="X", text="")
-                                del_button.path = el.path
-                                del_button.id = el.id
-                            else:
-                                
-                                if not el.hide:
+                                if obj.mc_edit_enable:
+                                    
                                     row = box.row(align=False)
                                     if el.icon !="NONE":
                                         row.label(text=el.name,icon=el.icon)
                                     else:
                                         row.label(text=el.name)
-                                
-                                    row.scale_x=1.0
-                                    row.prop(eval(el.path), el.id, text="")
+                                    
+                                    sett_button = row.operator("ops.mc_propsettings", icon="PREFERENCES", text="")
+                                    sett_button.name = el.name
+                                    sett_button.path = el.path
+                                    sett_button.id = el.id
+                                    sett_button.icon = el.icon
+                                    sett_button.section = el.section
+                                    
+                                    row2 = row.row(align=True)
+                                    up_button = row2.operator("ops.mc_swapprops", icon="TRIA_UP", text="")
+                                    up_button.mod = True
+                                    up_button.name = el.name
+                                    up_button.path = el.path
+                                    up_button.id = el.id
+                                    down_button = row2.operator("ops.mc_swapprops", icon="TRIA_DOWN", text="")
+                                    down_button.mod = False
+                                    down_button.name = el.name
+                                    down_button.path = el.path
+                                    down_button.id = el.id
+                                    
+                                    if el.hide:
+                                        row.prop(el, "hide", text="", icon = "HIDE_ON")
+                                    else:
+                                        row.prop(el, "hide", text="", icon = "HIDE_OFF")
+                                    
+                                    del_button = row.operator("ops.mc_removeproperty", icon="X", text="")
+                                    del_button.path = el.path
+                                    del_button.id = el.id
+                                else:
+                                    
+                                    if not el.hide:
+                                        row = box.row(align=False)
+                                        if el.icon !="NONE":
+                                            row.label(text=el.name,icon=el.icon)
+                                        else:
+                                            row.label(text=el.name)
+                                    
+                                        row.scale_x=1.0
+                                        row.prop(eval(el.path), el.id, text="")
                     
                 elif sec.type == "COLLECTION":
                     
@@ -1243,11 +1356,13 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                         break
                     
                     row = layout.row(align=False)
+                    if sec.collapsable:
+                        row.prop(sec, "collapsed", icon="TRIA_DOWN" if not sec.collapsed else "TRIA_RIGHT", icon_only=True, emboss=False)
                     if sec.icon == "NONE":
                         row.label(text=sec.name)
                     else:
                         row.label(text=sec.name,icon=sec.icon)
-                    
+                        
                     if obj.mc_edit_enable:
                         
                         ssett_button = row.operator("ops.mc_sectionsettings", icon="PREFERENCES", text="")
@@ -1265,50 +1380,65 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                         sdown_button.name = sec.name
                         sdown_button.icon = sec.icon
                         
-                        if sec.outfit_enable:
-                            box = layout.box()
-                            box.prop(sec,"outfit_body", text="Body", icon="OUTLINER_OB_MESH")
-                    
-                    box = layout.box()
-                    if sec_empty:
-                        row = box.row(align=False)
-                        row.label(text="No Collection Assigned", icon="ERROR")
                         row.operator("ops.mc_deletesection",text="",icon="X").name = sec.name
-                    
-                    #for collection in sec.collections:
-                        #box.label(text=collection.collection.name)
-                    if len(sec.collections)>0:
-                        box.prop(sec,"collections_list", text="")
-                        box2 = box.box()
-                        if len(bpy.data.collections[sec.collections_list].objects)>0:
-                            for obj2 in bpy.data.collections[sec.collections_list].objects:
-                                row = box2.row()
-                                #row.label(text=obj.name, icon='OUTLINER_OB_'+obj.type)
-                                #row2 = row.row(align=True)
-                                if obj2.hide_viewport:
-                                    vop=row.operator("ops.mc_colobjvisibility",text=obj2.name, icon='OUTLINER_OB_'+obj2.type)
-                                    vop.obj = obj2.name
-                                    vop.sec = sec.name
-                                else:
-                                    vop = row.operator("ops.mc_colobjvisibility",text=obj2.name, icon='OUTLINER_OB_'+obj2.type, depress = True)
-                                    vop.obj = obj2.name
-                                    vop.sec = sec.name
-                                #row2.prop(obj,'hide_viewport',text="", emboss = False)
-                                #row2.prop(obj,'hide_render',text="", emboss = False)
-                        else:
-                            box2.label(text="This Collection seems empty", icon="ERROR")
                         
-                        if sec.collections_enable_global_smoothcorrection or sec.collections_enable_global_shrinkwrap or sec.collections_enable_global_mask or sec.collections_enable_global_normalautosmooth:
-                            box.label(text= sec.name+" Global Properties", icon="MODIFIER")
-                            box2 = box.box()
-                            if sec.collections_enable_global_smoothcorrection:
-                                box2.prop(sec,"collections_global_smoothcorrection")
-                            if sec.collections_enable_global_shrinkwrap:
-                                box2.prop(sec,"collections_global_shrinkwrap")
-                            if sec.collections_enable_global_mask:
-                                box2.prop(sec,"collections_global_mask")
-                            if sec.collections_enable_global_normalautosmooth:
-                                box2.prop(sec,"collections_global_normalautosmooth")
+                        if not sec.collapsed and sec.outfit_enable and len(sec.collections)>0:
+                            box = layout.box()
+                            if sec.outfit_enable:
+                                box.prop(sec,"outfit_body", text="Body", icon="OUTLINER_OB_MESH")
+                            
+                            if len(sec.collections)>0:
+                                box.label(text="Collection List", icon="OUTLINER_COLLECTION")
+                                box = box.box()
+                                for collection in sec.collections:
+                                    row = box.row()
+                                    row.label(text=collection.collection.name)
+                                    del_col = row.operator("ops.mc_deletecollection",text="",icon="X")
+                                    del_col.sec = sec.name
+                                    del_col.col = collection.collection.name
+                                    
+                    else:
+                        if not sec.collapsed:
+                            box = layout.box()
+                            if sec_empty:
+                                row = box.row(align=False)
+                                row.label(text="No Collection Assigned", icon="ERROR")
+                                row.operator("ops.mc_deletesection",text="",icon="X").name = sec.name
+                            
+                            #for collection in sec.collections:
+                                #box.label(text=collection.collection.name)
+                            if len(sec.collections)>0:
+                                box.prop(sec,"collections_list", text="")
+                                box2 = box.box()
+                                if len(bpy.data.collections[sec.collections_list].objects)>0:
+                                    for obj2 in bpy.data.collections[sec.collections_list].objects:
+                                        row = box2.row()
+                                        #row.label(text=obj.name, icon='OUTLINER_OB_'+obj.type)
+                                        #row2 = row.row(align=True)
+                                        if obj2.hide_viewport:
+                                            vop=row.operator("ops.mc_colobjvisibility",text=obj2.name, icon='OUTLINER_OB_'+obj2.type)
+                                            vop.obj = obj2.name
+                                            vop.sec = sec.name
+                                        else:
+                                            vop = row.operator("ops.mc_colobjvisibility",text=obj2.name, icon='OUTLINER_OB_'+obj2.type, depress = True)
+                                            vop.obj = obj2.name
+                                            vop.sec = sec.name
+                                        #row2.prop(obj,'hide_viewport',text="", emboss = False)
+                                        #row2.prop(obj,'hide_render',text="", emboss = False)
+                                else:
+                                    box2.label(text="This Collection seems empty", icon="ERROR")
+                                
+                                if sec.collections_enable_global_smoothcorrection or sec.collections_enable_global_shrinkwrap or sec.collections_enable_global_mask or sec.collections_enable_global_normalautosmooth:
+                                    box.label(text= "Global Properties", icon="MODIFIER")
+                                    box2 = box.box()
+                                    if sec.collections_enable_global_smoothcorrection:
+                                        box2.prop(sec,"collections_global_smoothcorrection")
+                                    if sec.collections_enable_global_shrinkwrap:
+                                        box2.prop(sec,"collections_global_shrinkwrap")
+                                    if sec.collections_enable_global_mask:
+                                        box2.prop(sec,"collections_global_mask")
+                                    if sec.collections_enable_global_normalautosmooth:
+                                        box2.prop(sec,"collections_global_normalautosmooth")
                                                 
         else:
             box = layout.box()
@@ -1348,6 +1478,25 @@ class MenuCreator_Settings_Panel(MainPanel, bpy.types.Panel):
         #box.operator('ops.mc_cleanprop', text="Clean all objects")
         box.operator('ops.mc_cleanprop', text="Reset All Objects", icon="ERROR").reset = True
 
+# Handlers
+
+@persistent
+def mc_scene_modification_handler(scene):
+    """Called at every modification done to the scene."""
+    # Do stuff...
+    # I think the argument of the function is the context, but I remember having troubles using it,
+    # so I used bpy.context instead
+    # Given that this function receives almost no information from its caller, you'd need to have a list
+    # to keep track of the previously existing collections, vs the ones existing now
+    
+    for obj in bpy.data.objects:
+        for sec in obj.mc_sections:
+            i = 0
+            for el in sec.collections:
+                if not hasattr(el.collection, 'name'):
+                    sec.collections.remove(i)
+                i = i + 1
+
 
 # Register
 
@@ -1361,6 +1510,7 @@ classes = (
     MC_SwapProperty,
     MC_AddSection,
     MC_AddCollection,
+    MC_RemoveCollection,
     MC_SectionSettings,
     MC_SwapSection,
     MC_DeleteSection,
@@ -1380,6 +1530,11 @@ def register():
     
     bpy.types.WM_MT_button_context.append(menu_func)
     bpy.types.OUTLINER_MT_collection.append(mc_collection_menu)
+    
+    # Handlers
+    bpy.app.handlers.depsgraph_update_post.append(mc_scene_modification_handler) # When a modif is done to the scene
+    bpy.app.handlers.redo_post.append(mc_scene_modification_handler) # After a redo is done
+    bpy.app.handlers.undo_post.append(mc_scene_modification_handler) # Undo
 
 def unregister():
     
