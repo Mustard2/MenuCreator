@@ -43,12 +43,6 @@ Alternatively, you can ownload the whole repository as a zip file (or clone it l
 
 - [check the video for the complete instructions](https://gofile.io/d/NPrmDS)
 
-## Current limitations
-
-- At the moment the collections can not be deleted from a collection section. The only way to delete one property is to delete the section and re-do it. This will be fixed in a later version.
-
-- If you delete a collection, at the moment an error is thrown and the collection section will not be correctly shown. At the moment the only way to fix this is to delete the section and re-create it. This will be fixed in a later version.
-
 ## FAQ
 
 - *I shared a blend file to another person and he/she can't see the Menu*
