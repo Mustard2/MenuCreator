@@ -19,7 +19,9 @@ This addon can be useful both for Blender users, to expose the properties in a h
 - outfit functionality: as an extension of the collection functionality, it is possible to enable auto-masking of the objects listed in the menu. This means that you can define a Body object, and its mask modifiers will be activated when you show an Object in the collection list
 
 ## Installation
-Download the repository as a zip file (or clone it locally), and then install the .py file (**not the .zip file, you must unzip it and use the Python file!**)
+You can find the latest version in the [Releases page of this repository](https://github.com/Mustard2/MenuCreator/releases).
+
+Alternatively, you can ownload the whole repository as a zip file (or clone it locally), and then install the .py file (**not the .zip file, you must unzip it and use the Python file!**).
 
 ## Instructions
 - create a Menu clicking on an Object and initializing the Menu
