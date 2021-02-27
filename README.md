@@ -33,13 +33,18 @@ Alternatively, you can ownload the whole repository as a zip file (or clone it l
 
 - you can change the name and the icon of the properties in Edit Mode, clicking on the cogwheel
 
+- you can link properties to the ones you already added. Just click on a property and use Link to Property
+
+![Linked props](https://i.ibb.co/wN929LX/Cattura2.png)
+![Linked props2](https://i.ibb.co/HNFVf15/Cattura3.png)
+
 - you can create new sections in the Menu to get a cleaner list of the properties, clicking on the + button. You can choose the order of both sections and properties within the section
 
 - to use the collection functionality, create a section and choose Collection Section (note that the type of the section can not be changed after the section has been created)
 
 - to enable the global collection options and the Outfit functionalities, check the Section properties (the cogwheel near the Section name in Edit Mode)
 
-![Right-click Collection](https://i.ibb.co/7CT96KK/Eqh-CUMKXAAEB36u.jpg[/img])
+![Right-click Collection](https://i.ibb.co/7CT96KK/Eqh-CUMKXAAEB36u.jpg)
 
 - [check the video for the complete instructions](https://gofile.io/d/NPrmDS)
 
