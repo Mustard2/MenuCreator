@@ -46,7 +46,7 @@ Alternatively, you can ownload the whole repository as a zip file (or clone it l
 
 ![Right-click Collection](https://i.ibb.co/7CT96KK/Eqh-CUMKXAAEB36u.jpg)
 
-- [check the video for the complete instructions](https://gofile.io/d/NPrmDS)
+- [check the video for the complete instructions](https://gofile.io/d/NPrmDS) (updated to version 0.0.1)
 
 ## FAQ
 
