@@ -125,13 +125,11 @@ class MCSectionItem(bpy.types.PropertyGroup):
         
         items = []
         
-        i = 0
         for el in self.collections:
             if hasattr(el.collection, 'name'):
                 items.append( (el.collection.name,el.collection.name,el.collection.name) )
-                i = i + 1
             
-        return items
+        return sorted(items)
 
     # Function to update global collection properties
     def mc_collections_list_update(self, context):
@@ -224,6 +222,7 @@ bpy.utils.register_class(MCLinkedPropertyItem)
 
 # Class to store properties informations
 class MCPropertyItem(bpy.types.PropertyGroup):
+    mc_id : bpy.props.IntProperty(name="Section ID")
     name : bpy.props.StringProperty(name="Property Name")
     path: bpy.props.StringProperty(name="Property Path")
     id : bpy.props.StringProperty(name="Property Identifier")
@@ -268,6 +267,7 @@ def mc_add_property_item(collection, item):
         add_item.name = item[0]
         add_item.path = item[1]
         add_item.id = item[2]
+        add_item.mc_id = mc_len_collection(collection)
     
     return i
 
@@ -294,6 +294,10 @@ def mc_print_properties():
     for obj in bpy.data.objects:
         for el in obj.mc_properties:
             print(el.id + " : property" + el.name + " with path "+el.path)
+
+# Function to iutput the ID of the element
+def mc_prop_ID(elem):
+    return elem.mc_id
 
 # ---- Sections only functions
 
@@ -330,7 +334,7 @@ def mc_find_index_section(collection, item):
     i=-1
     for el in collection:
         i=i+1
-        if el.name == item[0]:
+        if el.name == item:
             break
     return i
 
@@ -402,7 +406,6 @@ class MC_AddProperty(bpy.types.Operator):
             
             rna, path = context.window_manager.clipboard.rsplit('.', 1)
             if '][' in path:
-                print('Custom property detected')
                 path, rem = path.rsplit('[', 1)
                 rna = rna + '.' + path
                 path = '[' + rem
@@ -458,8 +461,6 @@ class MC_LinkProperty(bpy.types.Operator):
             
             rna, path = context.window_manager.clipboard.rsplit('.', 1)
             if '][' in path:
-                print('Custom property detected')
-                
                 path, rem = path.rsplit('[', 1)
                 rna = rna + '.' + path
                 path = '[' + rem
@@ -774,7 +775,7 @@ class MC_PropertySettings(bpy.types.Operator):
             box = layout.box()
             for prop in obj.mc_properties[i].linked_props:
                 row = box.row()
-                row.label(text=prop.path + prop.id, icon="DOT")
+                row.label(text=prop.path + '.' + prop.id, icon="DOT")
                 link_del_op = row.operator(MC_RemoveLinkedProperty.bl_idname, icon="X")
                 link_del_op.prop_index = i
                 link_del_op.link_id = prop.id
@@ -800,12 +801,10 @@ class MC_SwapProperty(bpy.types.Operator):
             obj = settings.em_fixobj_pointer
         else:
             obj = context.active_object
-        col = obj.mc_properties
+        col =  sorted(obj.mc_properties, key = mc_prop_ID)
         col_len = mc_len_collection(col)
         
         i = mc_find_index(col,[self.name,self.path,self.id])
-        
-        item1 = [col[i].name,col[i].path,col[i].id,col[i].icon,col[i].section,col[i].hide,col[i].linked_props]
     
         if i>=0:
             if self.mod:
@@ -815,24 +814,10 @@ class MC_SwapProperty(bpy.types.Operator):
                     j = j - 1
                     if col[j].section==col[i].section:
                         break
-                if j>-1:    
+                if j>-1:
                     
-                    item2 = [col[j].name,col[j].path,col[j].id,col[j].icon,col[j].section,col[j].hide,col[j].linked_props]
-            
-                    col[j].name = item1[0]
-                    col[j].path = item1[1]
-                    col[j].id = item1[2]
-                    col[j].icon = item1[3]
-                    col[j].section = item1[4]
-                    col[j].hide = item1[5]
-                    col[j].linked_props = item1[6]
-                    col[i].name = item2[0]
-                    col[i].path = item2[1]
-                    col[i].id = item2[2]
-                    col[i].icon = item2[3]
-                    col[i].section = item2[4]
-                    col[i].hide = item2[5]
-                    col[i].linked_props = item2[6]
+                    col[i].mc_id = j
+                    col[j].mc_id = i
         
             else:
                 
@@ -841,24 +826,10 @@ class MC_SwapProperty(bpy.types.Operator):
                     j=j+1
                     if col[j].section==col[i].section:
                         break
-                if j<col_len: 
-        
-                    item2 = [col[j].name,col[j].path,col[j].id,col[j].icon,col[j].section,col[j].hide,col[j].linked_props]
-            
-                    col[j].name = item1[0]
-                    col[j].path = item1[1]
-                    col[j].id = item1[2]
-                    col[j].icon = item1[3]
-                    col[j].section = item1[4]
-                    col[j].hide = item1[5]
-                    col[j].linked_props = item1[6]
-                    col[i].name = item2[0]
-                    col[i].path = item2[1]
-                    col[i].id = item2[2]
-                    col[i].icon = item2[3]
-                    col[i].section = item2[4]
-                    col[i].hide = item2[5]
-                    col[i].linked_props = item2[6]
+                if j<col_len:
+                    
+                    col[i].mc_id = j
+                    col[j].mc_id = i
         
         return {'FINISHED'}
 
@@ -1022,7 +993,7 @@ class MC_SectionSettings(bpy.types.Operator):
         sec_obj = obj.mc_sections
         
         
-        i = mc_find_index_section(sec_obj,[self.name,self.icon])
+        i = mc_find_index_section(sec_obj,self.name)
         
         if i>=0:
             
@@ -1054,7 +1025,7 @@ class MC_SectionSettings(bpy.types.Operator):
         sec_obj = obj.mc_sections
         
         self.name_edit = self.name
-        self.ID = mc_find_index_section(sec_obj,[self.name,self.icon])
+        self.ID = mc_find_index_section(sec_obj,self.name)
         self.collapsable = sec_obj[self.ID].collapsable
         self.collections_enable_global_smoothcorrection = sec_obj[self.ID].collections_enable_global_smoothcorrection
         self.collections_enable_global_shrinkwrap = sec_obj[self.ID].collections_enable_global_shrinkwrap
@@ -1142,7 +1113,7 @@ class MC_SwapSection(bpy.types.Operator):
         col = obj.mc_sections
         col_len = mc_len_collection(col)
         
-        sec_index = mc_find_index_section(col,[self.name,self.icon])
+        sec_index = mc_find_index_section(col,self.name)
         i = col[sec_index].id
             
         if self.mod and i > 1:
@@ -1186,7 +1157,6 @@ class MC_DeleteSection(bpy.types.Operator):
             j = sec_obj[i].id
             
             for k in range(j+1,len(sec_obj)):
-                print(k)
                 sec_obj[mc_find_index_section_fromID(sec_obj, k)].id = k-1
             
             sec_obj.remove(i)
@@ -1216,7 +1186,7 @@ class MC_CollectionObjectVisibility(bpy.types.Operator):
         else:
             body_obj = context.active_object
         sec_obj = body_obj.mc_sections
-        i = mc_find_index_section(sec_obj,[self.sec,''])
+        i = mc_find_index_section(sec_obj,self.sec)
         
         if sec_obj[i].outfit_enable:
             if sec_obj[i].outfit_body:
@@ -1248,12 +1218,10 @@ class MC_RemoveCollection(bpy.types.Operator):
             obj = context.active_object
         sec_obj = obj.mc_sections
         
-        sec_index = mc_find_index_section(sec_obj,[self.sec])
+        sec_index = mc_find_index_section(sec_obj,self.sec)
         
         i = 0
         for el in sec_obj[sec_index].collections:
-            print(el.collection.name)
-            print(self.col)
             if el.collection.name == self.col:
                 sec_obj[sec_index].collections.remove(i)
                 break
@@ -1444,7 +1412,7 @@ class PT_MenuCreator_Panel(MainPanel, bpy.types.Panel):
                     
                     if not sec.collapsed:
                         
-                        for el in mc_col:
+                        for el in sorted(mc_col, key = mc_prop_ID):
                             
                             if el.section == sec.name:
                             
