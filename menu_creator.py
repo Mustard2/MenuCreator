@@ -5,7 +5,7 @@ bl_info = {
     "name": "Menu Creator",
     "description": "Create a custom menu for each Object. To add properties or collections, just right click on the properties and hit Add property to the Menu",
     "author": "Mustard",
-    "version": (0, 0, 2),
+    "version": (0, 0, 3),
     "blender": (2, 91, 0),
     "warning": "",
     "wiki_url": "https://github.com/Mustard2/MenuCreator",
@@ -47,28 +47,26 @@ mc_icon_list = [
                 ("PARTICLEMODE", "Comb", "Comb","PARTICLEMODE",9)
             ]
 
-# Update functions for settings
-# Function to avoid edit mode and fixed object while exiting edit mode
-def mc_ms_editmode_update(self, context):
-    
-    if not self.ms_editmode:
-        for obj in bpy.data.objects:
-            obj.mc_edit_enable = False
-    
-    # context.scene.mc_settings.em_fixobj = False
-    
-    return
-
-# Function to save the fixed object pointer to be used until the object is released
-def mc_em_fixobj_update(self, context):
-    
-    if self.em_fixobj:
-        self.em_fixobj_pointer = context.active_object
-    
-    return
-
 # Class with all the settings variables
 class MC_Settings(bpy.types.PropertyGroup):
+    
+    # Update functions for settings
+    # Function to avoid edit mode and fixed object while exiting edit mode
+    def mc_ms_editmode_update(self, context):
+    
+        if not self.ms_editmode:
+            for obj in bpy.data.objects:
+                obj.mc_edit_enable = False
+    
+        return
+    
+    # Function to save the fixed object pointer to be used until the object is released
+    def mc_em_fixobj_update(self, context):
+    
+        if self.em_fixobj:
+            self.em_fixobj_pointer = context.active_object
+    
+        return
     
     # Main Settings definitions
     ms_editmode: bpy.props.BoolProperty(name="Enable Edit Mode Tools",
@@ -100,7 +98,6 @@ class MC_Settings(bpy.types.PropertyGroup):
 bpy.utils.register_class(MC_Settings)
 bpy.types.Scene.mc_settings = bpy.props.PointerProperty(type=MC_Settings)
 
-
 # Object specific properties
 bpy.types.Object.mc_enable = bpy.props.BoolProperty(name="", default=False)
 bpy.types.Object.mc_edit_enable = bpy.props.BoolProperty(name="Edit Mode", default=False, description="Enable edit mode in this menu.\nActivating this option you will have access to various tools to modify properties and sections")
@@ -108,91 +105,87 @@ bpy.types.Object.mc_edit_enable = bpy.props.BoolProperty(name="Edit Mode", defau
 # Class to store collections for section informations
 class MCCollectionItem(bpy.types.PropertyGroup):
     collection : bpy.props.PointerProperty(name="Collection",type=bpy.types.Collection)
+
 bpy.utils.register_class(MCCollectionItem)
-
-# Function to update the collapsed status if the collapsed section property is changed
-def mc_sections_collapsed_update(self, context):
-    
-    items = []
-    
-    i = 0
-    if not self.collapsable:
-        self.collapsed = False
-        
-    return items
-
-# Function to create an array of tuples for enum collections
-def mc_collections_list(self, context):
-    
-    items = []
-    
-    i = 0
-    for el in self.collections:
-        if hasattr(el.collection, 'name'):
-        #try:
-            items.append( (el.collection.name,el.collection.name,el.collection.name) )
-            i = i + 1
-        #except:
-        #    self.collections.remove(i)
-        #    items = mc_collections_list(self, context)
-        #    break
-        
-    return items
-
-# Function to update global collection properties
-def mc_collections_list_update(self, context):
-    
-    for collection in self.collections:
-        if collection.collection.name == self.collections_list:
-            collection.collection.hide_viewport = False
-            collection.collection.hide_render = False
-        else:
-            collection.collection.hide_viewport = True
-            collection.collection.hide_render = True
-
-def mc_collections_global_options_update(self, context):
-    
-    items = []
-    
-    i = 0
-    for el in self.collections:
-        for obj in el.collection.objects:
-            
-            if obj.type == "MESH":
-                obj.data.use_auto_smooth = self.collections_global_normalautosmooth
-            
-            for modifier in obj.modifiers:
-                if modifier.type == "CORRECTIVE_SMOOTH":
-                    modifier.show_viewport = self.collections_global_smoothcorrection
-                    modifier.show_render = self.collections_global_smoothcorrection
-                elif modifier.type == "MASK":
-                    modifier.show_viewport = self.collections_global_mask
-                    modifier.show_render = self.collections_global_mask
-                elif modifier.type == "SHRINKWRAP":
-                    modifier.show_viewport = self.collections_global_shrinkwrap
-                    modifier.show_render = self.collections_global_shrinkwrap
-    
-    if self.outfit_enable:
-        for modifier in self.outfit_body.modifiers:
-            if modifier.type == "MASK":
-                if not self.collections_global_mask:
-                    modifier.show_viewport = False
-                    modifier.show_render = False
-                else:
-                    for el in self.collections:
-                        for obj in el.collection.objects:
-                            if obj.name in modifier.name and not obj.hide_viewport:
-                                modifier.show_viewport = True
-                                modifier.show_render = True
-        
-    return
-
-# Poll function for the selection of mesh only in pointer properties
-def mc_poll_mesh(self, object):
-        return object.type == 'MESH'
 
 # Class to store section informations
 class MCSectionItem(bpy.types.PropertyGroup):
+    
+    # Properties and update functions
+    # Function to update the collapsed status if the collapsed section property is changed
+    def mc_sections_collapsed_update(self, context):
+    
+        if not self.collapsable:
+            self.collapsed = False
+        
+        return
+    
+    # Function to create an array of tuples for enum collections
+    def mc_collections_list(self, context):
+        
+        items = []
+        
+        i = 0
+        for el in self.collections:
+            if hasattr(el.collection, 'name'):
+                items.append( (el.collection.name,el.collection.name,el.collection.name) )
+                i = i + 1
+            
+        return items
+
+    # Function to update global collection properties
+    def mc_collections_list_update(self, context):
+        
+        for collection in self.collections:
+            if collection.collection.name == self.collections_list:
+                collection.collection.hide_viewport = False
+                collection.collection.hide_render = False
+            else:
+                collection.collection.hide_viewport = True
+                collection.collection.hide_render = True
+
+    def mc_collections_global_options_update(self, context):
+        
+        items = []
+        
+        i = 0
+        for el in self.collections:
+            for obj in el.collection.objects:
+                
+                if obj.type == "MESH":
+                    obj.data.use_auto_smooth = self.collections_global_normalautosmooth
+                
+                for modifier in obj.modifiers:
+                    if modifier.type == "CORRECTIVE_SMOOTH":
+                        modifier.show_viewport = self.collections_global_smoothcorrection
+                        modifier.show_render = self.collections_global_smoothcorrection
+                    elif modifier.type == "MASK":
+                        modifier.show_viewport = self.collections_global_mask
+                        modifier.show_render = self.collections_global_mask
+                    elif modifier.type == "SHRINKWRAP":
+                        modifier.show_viewport = self.collections_global_shrinkwrap
+                        modifier.show_render = self.collections_global_shrinkwrap
+        
+        if self.outfit_enable:
+            for modifier in self.outfit_body.modifiers:
+                if modifier.type == "MASK":
+                    if not self.collections_global_mask:
+                        modifier.show_viewport = False
+                        modifier.show_render = False
+                    else:
+                        for el in self.collections:
+                            for obj in el.collection.objects:
+                                if obj.name in modifier.name and not obj.hide_viewport:
+                                    modifier.show_viewport = True
+                                    modifier.show_render = True
+            
+        return
+    
+    # Poll function for the selection of mesh only in pointer properties
+    def mc_poll_mesh(self, object):
+        return object.type == 'MESH'
+    
+    
     # Global section options
     id : bpy.props.IntProperty(name="Section ID")
     name : bpy.props.StringProperty(name="Section Name")
@@ -222,6 +215,12 @@ class MCSectionItem(bpy.types.PropertyGroup):
 bpy.utils.register_class(MCSectionItem)
 bpy.types.Object.mc_sections = bpy.props.CollectionProperty(type=MCSectionItem)
 
+# Class to store linked properties informations
+class MCLinkedPropertyItem(bpy.types.PropertyGroup):
+    path: bpy.props.StringProperty(name="Property Path")
+    id : bpy.props.StringProperty(name="Property Identifier")
+
+bpy.utils.register_class(MCLinkedPropertyItem)
 
 # Class to store properties informations
 class MCPropertyItem(bpy.types.PropertyGroup):
@@ -231,6 +230,8 @@ class MCPropertyItem(bpy.types.PropertyGroup):
     icon : bpy.props.EnumProperty(name="Property Icon", default="NONE",items=mc_icon_list)
     section : bpy.props.StringProperty(name="Section", default="Unsorted")
     hide : bpy.props.BoolProperty(name="Hide Property", default=False)
+    
+    linked_props: bpy.props.CollectionProperty(name="Linked properties", type=MCLinkedPropertyItem)
 
 bpy.utils.register_class(MCPropertyItem)
 bpy.types.Object.mc_properties = bpy.props.CollectionProperty(type=MCPropertyItem)
@@ -367,9 +368,10 @@ def dump(obj, text):
         if hasattr( obj, attr ):
             print( "obj.%s = %s" % (attr, getattr(obj, attr)))
 
+# Operator to add the right click button on properties
 class MC_AddProperty(bpy.types.Operator):
     """Add the property to the menu"""
-    bl_idname = "object.add_property"
+    bl_idname = "mc.add_property"
     bl_label = "Add property to Menu"
 
     @classmethod
@@ -390,7 +392,7 @@ class MC_AddProperty(bpy.types.Operator):
 
         if hasattr(context, 'button_prop'):
             prop = context.button_prop
-            dump(prop, 'button_prop')
+            #dump(prop, 'button_prop')
             
             try:
                 bpy.ops.ui.copy_data_path_button(full_path=True)
@@ -399,7 +401,12 @@ class MC_AddProperty(bpy.types.Operator):
                 return {'FINISHED'}
             
             rna, path = context.window_manager.clipboard.rsplit('.', 1)
-            if '[' in path:
+            if '][' in path:
+                print('Custom property detected')
+                path, rem = path.rsplit('[', 1)
+                rna = rna + '.' + path
+                path = '[' + rem
+            elif '[' in path:
                 path, rem = path.rsplit('[', 1)
             
             if obj.mc_enable:
@@ -418,9 +425,88 @@ class MC_AddProperty(bpy.types.Operator):
 
         return {'FINISHED'}
 
+# Operator to link a property to another one
+class MC_LinkProperty(bpy.types.Operator):
+    """Link the selected property to this one"""
+    bl_idname = "mc.link_property"
+    bl_label = "Link Property"
+    
+    prop_id: bpy.props.StringProperty()
+    prop_path: bpy.props.StringProperty()
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        
+        settings = bpy.context.scene.mc_settings
+        if settings.em_fixobj:
+            obj = settings.em_fixobj_pointer
+        else:
+            obj = context.active_object
+
+        if hasattr(context, 'button_prop'):
+            prop = context.button_prop
+            #dump(prop, 'button_prop')
+            
+            try:
+                bpy.ops.ui.copy_data_path_button(full_path=True)
+            except:
+                self.report({'WARNING'}, 'Menu Creator - Invalid selection.')
+                return {'FINISHED'}
+            
+            rna, path = context.window_manager.clipboard.rsplit('.', 1)
+            if '][' in path:
+                print('Custom property detected')
+                
+                path, rem = path.rsplit('[', 1)
+                rna = rna + '.' + path
+                path = '[' + rem
+            elif '[' in path:
+                path, rem = path.rsplit('[', 1)
+            
+            if obj.mc_enable:
+        
+                i = mc_find_index(obj.mc_properties, ['',self.prop_path,self.prop_id])
+                
+                prop_type = type(eval(obj.mc_properties[i].path + '.' + obj.mc_properties[i].id))
+                if '].[' in rna + '.' + path:
+                    link_type = type(eval(rna + path))
+                else:
+                    link_type = type(eval(rna + '.' + path))
+                
+                if prop_type == link_type:
+                
+                    already_added = False
+                    for el in obj.mc_properties[i].linked_props:
+                        if el.path == rna and el.id == path:
+                            already_added = True
+                            break    
+                    if not already_added:    
+                        add_item = obj.mc_properties[i].linked_props.add()
+                        add_item.id = path
+                        add_item.path = rna
+                
+                        self.report({'INFO'}, 'Menu Creator - Property \'' + path + '\' linked to \'' + obj.mc_properties[i].name + '\'')
+                    else:
+                        self.report({'WARNING'}, 'Menu Creator - Property \'' + path + '\' already linked to \'' + obj.mc_properties[i].name + '\'')
+                    
+                else:
+                    self.report({'ERROR'}, 'Menu Creator - Property \'' + path + '\' can not be linked to \'' + obj.mc_properties[i].name + '\'')
+                    if settings.ms_debug:
+                        print('MenuCreator - Property \'' + path + '\' can not be linked to \'' + obj.mc_properties[i].name + '\'')
+                        print('              Data types are ' + str(link_type) + ' and ' + str(prop_type) + '.')
+            
+            else:
+                self.report({'ERROR'}, 'Menu Creator - Can not link property in \'' + obj.name + '\'. No menu has been initialized.') 
+
+        return {'FINISHED'}
+
+# Operator to add the collection to the selected section
 class MC_AddCollection(bpy.types.Operator):
     """Add the collection to the selected section"""
-    bl_idname = "object.add_collection"
+    bl_idname = "mc.add_collection"
     bl_label = "Add collection to Menu"
     
     section: bpy.props.StringProperty()
@@ -467,16 +553,48 @@ def menu_func(self, context):
         layout = self.layout
         layout.separator()
         layout.operator(MC_AddProperty.bl_idname)
+        
+def menu_func_link(self, context):
+    
+    if hasattr(context, 'button_prop'):
+        layout = self.layout
+        #layout.label(text="Try")
+        self.layout.menu(OUTLINER_MT_link_mcmenu.bl_idname)
 
-# Collection for Collection List sections properties
 class OUTLINER_MT_collection(Menu):
     bl_label = "Custom Action Collection"
 
     def draw(self, context):
         pass
 
+# Operator to create the list of sections when right clicking on the property -> Link to property
+class OUTLINER_MT_link_mcmenu(bpy.types.Menu):
+    bl_idname = 'mc.menu_link'
+    bl_label = 'Link to Property'
+
+    def draw(self, context):
+        
+        settings = bpy.context.scene.mc_settings
+        if settings.em_fixobj:
+            obj = settings.em_fixobj_pointer
+        else:
+            obj = context.active_object
+        
+        layout = self.layout
+        
+        no_prop = True
+        for prop in obj.mc_properties:
+            op = layout.operator(MC_LinkProperty.bl_idname, text=prop.name, icon=prop.icon)
+            op.prop_id = prop.id
+            op.prop_path = prop.path
+            no_prop = False
+        
+        if no_prop:
+            layout.label(text="No properties found")
+
+# Operator to create the list of sections when right clicking on the collection -> Add collection to Section
 class OUTLINER_MT_collection_mcmenu(bpy.types.Menu):
-    bl_idname = 'object.mcmenu_collection'
+    bl_idname = 'mc.menu_collection'
     bl_label = 'Add Collection to Section'
 
     def draw(self, context):
@@ -492,7 +610,7 @@ class OUTLINER_MT_collection_mcmenu(bpy.types.Menu):
         no_col_sec = True
         for sec in obj.mc_sections:
             if sec.type == "COLLECTION":
-                layout.operator(MC_AddCollection.bl_idname, text=sec.name).section = sec.name
+                layout.operator(MC_AddCollection.bl_idname, text=sec.name, icon=sec.icon).section = sec.name
                 no_col_sec = False
         
         if no_col_sec:
@@ -505,7 +623,7 @@ def mc_collection_menu(self, context):
 # Operator to clean all properties and sections from all objects
 class MC_CleanAll(bpy.types.Operator):
     """Clean all the menus.\nIf you choose reset, it will also delete all Menu options from all objects"""
-    bl_idname = "ops.mc_cleanprop"
+    bl_idname = "mc.cleanprop"
     bl_label = "Clean all the properties"
     
     reset : BoolProperty(default=False)
@@ -526,7 +644,7 @@ class MC_CleanAll(bpy.types.Operator):
 # Operator to clean all properties and sections from an objects. If reset is on, it will also disable the menu for that object
 class MC_CleanObject(bpy.types.Operator):
     """Clean all the object properties.\nIf you choose reset, it will also delete all Menu options from the object"""
-    bl_idname = "ops.mc_cleanpropobj"
+    bl_idname = "mc.cleanpropobj"
     bl_label = "Clean the object"
     
     reset : BoolProperty(default=False)
@@ -548,10 +666,43 @@ class MC_CleanObject(bpy.types.Operator):
         
         return {'FINISHED'}
 
+# Operator to remove a linked property (button in UI)
+class MC_RemoveLinkedProperty(bpy.types.Operator):
+    """Remove the linked property"""
+    bl_idname = "mc.removelinkedproperty"
+    bl_label = ""
+    
+    prop_index : bpy.props.IntProperty()
+    link_path : bpy.props.StringProperty()
+    link_id : bpy.props.StringProperty()
+
+    @classmethod
+    def poll(cls, context):
+        return context.active_object is not None
+
+    def execute(self, context):
+        
+        settings = bpy.context.scene.mc_settings
+        if settings.em_fixobj:
+            obj = settings.em_fixobj_pointer
+        else:
+            obj = context.active_object
+        props = obj.mc_properties
+        
+        i=-1
+        for el in obj.mc_properties[self.prop_index].linked_props:
+            i=i+1
+            if el.path == self.link_path and el.id == self.link_id:
+                break
+        if i>=0:
+            obj.mc_properties[self.prop_index].linked_props.remove(i)
+
+        return {'FINISHED'}
+
 # Single Property settings
 class MC_PropertySettings(bpy.types.Operator):
     """Modify some of the property settings"""
-    bl_idname = "ops.mc_propsettings"
+    bl_idname = "mc.propsettings"
     bl_label = "Property settings"
     bl_icon = "PREFERENCES"
     bl_options = {'UNDO'}
@@ -587,13 +738,19 @@ class MC_PropertySettings(bpy.types.Operator):
         settings = bpy.context.scene.mc_settings
                 
         if settings.ms_debug:
-            return context.window_manager.invoke_props_dialog(self, width=550)
+            return context.window_manager.invoke_props_dialog(self, width=650)
         else:
-            return context.window_manager.invoke_props_dialog(self)
+            return context.window_manager.invoke_props_dialog(self, width=550)
             
     def draw(self, context):
         
         settings = bpy.context.scene.mc_settings
+        if settings.em_fixobj:
+            obj = settings.em_fixobj_pointer
+        else:
+            obj = context.active_object
+        
+        i = mc_find_index(obj.mc_properties,[self.name,self.path,self.id])
         
         layout = self.layout
         
@@ -610,11 +767,24 @@ class MC_PropertySettings(bpy.types.Operator):
             layout.label(text="Full path", icon="RNA")
             box = layout.box()
             box.label(text=self.path+'.'+self.id)
+        
+        if len(obj.mc_properties[i].linked_props)>0:
+            layout.separator()
+            layout.label(text="Linked Properties", icon="LINKED")
+            box = layout.box()
+            for prop in obj.mc_properties[i].linked_props:
+                row = box.row()
+                row.label(text=prop.path + prop.id, icon="DOT")
+                link_del_op = row.operator(MC_RemoveLinkedProperty.bl_idname, icon="X")
+                link_del_op.prop_index = i
+                link_del_op.link_id = prop.id
+                link_del_op.link_path = prop.path
+                
 
 # Swap Properties Operator
 class MC_SwapProperty(bpy.types.Operator):
     """Change the position of the property"""
-    bl_idname = "ops.mc_swapprops"
+    bl_idname = "mc.swapprops"
     bl_label = "Change the property position"
     
     mod : BoolProperty(default=False) # False = down, True = Up
@@ -635,7 +805,7 @@ class MC_SwapProperty(bpy.types.Operator):
         
         i = mc_find_index(col,[self.name,self.path,self.id])
         
-        item1 = [col[i].name,col[i].path,col[i].id,col[i].icon,col[i].section,col[i].hide]
+        item1 = [col[i].name,col[i].path,col[i].id,col[i].icon,col[i].section,col[i].hide,col[i].linked_props]
     
         if i>=0:
             if self.mod:
@@ -647,7 +817,7 @@ class MC_SwapProperty(bpy.types.Operator):
                         break
                 if j>-1:    
                     
-                    item2 = [col[j].name,col[j].path,col[j].id,col[j].icon,col[j].section,col[j].hide]
+                    item2 = [col[j].name,col[j].path,col[j].id,col[j].icon,col[j].section,col[j].hide,col[j].linked_props]
             
                     col[j].name = item1[0]
                     col[j].path = item1[1]
@@ -655,12 +825,14 @@ class MC_SwapProperty(bpy.types.Operator):
                     col[j].icon = item1[3]
                     col[j].section = item1[4]
                     col[j].hide = item1[5]
+                    col[j].linked_props = item1[6]
                     col[i].name = item2[0]
                     col[i].path = item2[1]
                     col[i].id = item2[2]
                     col[i].icon = item2[3]
                     col[i].section = item2[4]
                     col[i].hide = item2[5]
+                    col[i].linked_props = item2[6]
         
             else:
                 
@@ -671,7 +843,7 @@ class MC_SwapProperty(bpy.types.Operator):
                         break
                 if j<col_len: 
         
-                    item2 = [col[j].name,col[j].path,col[j].id,col[j].icon,col[j].section,col[j].hide]
+                    item2 = [col[j].name,col[j].path,col[j].id,col[j].icon,col[j].section,col[j].hide,col[j].linked_props]
             
                     col[j].name = item1[0]
                     col[j].path = item1[1]
@@ -679,19 +851,21 @@ class MC_SwapProperty(bpy.types.Operator):
                     col[j].icon = item1[3]
                     col[j].section = item1[4]
                     col[j].hide = item1[5]
+                    col[j].linked_props = item1[6]
                     col[i].name = item2[0]
                     col[i].path = item2[1]
                     col[i].id = item2[2]
                     col[i].icon = item2[3]
                     col[i].section = item2[4]
                     col[i].hide = item2[5]
+                    col[i].linked_props = item2[6]
         
         return {'FINISHED'}
 
 # Operator to remove a property (button in UI)
 class MC_RemoveProperty(bpy.types.Operator):
     """Remove the property from the current menu"""
-    bl_idname = "ops.mc_removeproperty"
+    bl_idname = "mc.removeproperty"
     bl_label = "Remove the property"
     
     path : bpy.props.StringProperty()
@@ -717,7 +891,7 @@ class MC_RemoveProperty(bpy.types.Operator):
 # Operator to add a new section
 class MC_AddSection(bpy.types.Operator):
     """Add a new section to the section list."""
-    bl_idname = "ops.mc_addsection"
+    bl_idname = "mc.addsection"
     bl_label = "Add section"
     bl_icon = "PREFERENCES"
     bl_options = {'UNDO'}
@@ -810,7 +984,7 @@ class MC_AddSection(bpy.types.Operator):
 # Section Property settings
 class MC_SectionSettings(bpy.types.Operator):
     """Modify the section settings."""
-    bl_idname = "ops.mc_sectionsettings"
+    bl_idname = "mc.sectionsettings"
     bl_label = "Section settings"
     bl_icon = "PREFERENCES"
     bl_options = {'UNDO'}
@@ -950,7 +1124,7 @@ class MC_SectionSettings(bpy.types.Operator):
 # Operator to change Section position
 class MC_SwapSection(bpy.types.Operator):
     """Change the position of the section"""
-    bl_idname = "ops.mc_swapsections"
+    bl_idname = "mc.swapsections"
     bl_label = "Change the section position"
     
     mod : BoolProperty(default=False) # False = down, True = Up
@@ -970,8 +1144,6 @@ class MC_SwapSection(bpy.types.Operator):
         
         sec_index = mc_find_index_section(col,[self.name,self.icon])
         i = col[sec_index].id
-        
-        #item1 = [col[i].name,col[i].icon,col[i].type,col[i].collections]
             
         if self.mod and i > 1:
             j = mc_find_index_section_fromID(col, i-1)
@@ -982,28 +1154,12 @@ class MC_SwapSection(bpy.types.Operator):
             col[sec_index].id = i+1
             col[j].id = i
         
-        #if self.mod and i > 0:
-        #    j = i - 1
-        #elif not self.mod and i < col_len-1:
-        #    j = i + 1       
-            
-            #item2 = [col[j].name,col[j].icon,col[j].type,col[j].collections]
-            
-            #col[j].name = item1[0]
-            #col[j].icon = item1[1]
-            #col[j].type = item1[2]
-            #col[j].collections = item1[3]
-            #col[i].name = item2[0]
-            #col[i].icon = item2[1]
-            #col[i].type = item2[2]
-            #col[i].collections = item2[3]
-        
         return {'FINISHED'}
 
 # Delete Section
 class MC_DeleteSection(bpy.types.Operator):
     """Delete Section"""
-    bl_idname = "ops.mc_deletesection"
+    bl_idname = "mc.deletesection"
     bl_label = "Section settings"
     bl_options = {'UNDO'}
     
@@ -1042,7 +1198,7 @@ class MC_DeleteSection(bpy.types.Operator):
 # Operator to shiwtch visibility of an object
 class MC_CollectionObjectVisibility(bpy.types.Operator):
     """Chenge the visibility of the selected object"""
-    bl_idname = "ops.mc_colobjvisibility"
+    bl_idname = "mc.colobjvisibility"
     bl_label = "Hide/Unhide Object visibility"
     bl_options = {'UNDO'}
     
@@ -1076,7 +1232,7 @@ class MC_CollectionObjectVisibility(bpy.types.Operator):
 # Operator to delete a collection
 class MC_RemoveCollection(bpy.types.Operator):
     """Remove the selected collection from the Menu.\nThe collection will NOT be deleted"""
-    bl_idname = "ops.mc_deletecollection"
+    bl_idname = "mc.deletecollection"
     bl_label = "Remove the selected collection from the menu"
     bl_options = {'UNDO'}
     
@@ -1110,7 +1266,7 @@ class MC_RemoveCollection(bpy.types.Operator):
 # Initial Configuration Operator
 class MC_InitialConfiguration(bpy.types.Operator):
     """Clean all the object properties"""
-    bl_idname = "ops.mc_initialconfig"
+    bl_idname = "mc.initialconfig"
     bl_label = "Clean all the properties"
     
     def execute(self, context):
@@ -1159,8 +1315,8 @@ class MainPanel:
     bl_region_type = "UI"
     bl_category = "Menu"
 
-class MenuCreator_InitialConfiguration_Panel(MainPanel, bpy.types.Panel):
-    bl_idname = "MenuCreator_InitialConfiguration_Panel"
+class PT_MenuCreator_InitialConfiguration_Panel(MainPanel, bpy.types.Panel):
+    bl_idname = "PT_MenuCreator_InitialConfiguration_Panel"
     bl_label = "Initial Configuration"
     
     @classmethod
@@ -1183,10 +1339,10 @@ class MenuCreator_InitialConfiguration_Panel(MainPanel, bpy.types.Panel):
         
         layout.label(text="Menu Configuration")
         
-        layout.operator('ops.mc_initialconfig', text="Create Menu")
+        layout.operator('mc.initialconfig', text="Create Menu")
 
-class MenuCreator_Panel(MainPanel, bpy.types.Panel):
-    bl_idname = "MenuCreator_Panel"
+class PT_MenuCreator_Panel(MainPanel, bpy.types.Panel):
+    bl_idname = "PT_MenuCreator_Panel"
     bl_label = "Menu"
     
     @classmethod
@@ -1225,7 +1381,7 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
         
         if settings.ms_editmode:
             row.prop(obj, "mc_edit_enable", text="",icon="MODIFIER")
-            row.operator("ops.mc_addsection",text="",icon="ADD")
+            row.operator("mc.addsection",text="",icon="ADD")
             if settings.em_fixobj:
                 row.prop(settings,"em_fixobj",icon="PINNED", text="")
             else:
@@ -1236,7 +1392,7 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
             else:
                 row.prop(settings,"em_fixobj",icon="UNPINNED", text= "")
         
-        if mc_col_len>0:
+        if mcs_col_len>1:
             
             for sec in sorted(mcs_col, key = mc_sec_ID):
                 
@@ -1264,17 +1420,17 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                         if obj.mc_edit_enable:
                             
                             if sec.name != "Unsorted":
-                                ssett_button = row.operator("ops.mc_sectionsettings", icon="PREFERENCES", text="")
+                                ssett_button = row.operator("mc.sectionsettings", icon="PREFERENCES", text="")
                                 ssett_button.name = sec.name
                                 ssett_button.icon = sec.icon
                                 ssett_button.type = sec.type
                             
                                 row2 = row.row(align=True)
-                                sup_button = row2.operator("ops.mc_swapsections", icon="TRIA_UP", text="")
+                                sup_button = row2.operator("mc.swapsections", icon="TRIA_UP", text="")
                                 sup_button.mod = True
                                 sup_button.name = sec.name
                                 sup_button.icon = sec.icon
-                                sdown_button = row2.operator("ops.mc_swapsections", icon="TRIA_DOWN", text="")
+                                sdown_button = row2.operator("mc.swapsections", icon="TRIA_DOWN", text="")
                                 sdown_button.mod = False
                                 sdown_button.name = sec.name
                                 sdown_button.icon = sec.icon
@@ -1284,7 +1440,7 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                             if sec_empty and sec.name != "Unsorted":
                                 row = box.row(align=False)
                                 row.label(text="Section Empty", icon="ERROR")
-                                row.operator("ops.mc_deletesection",text="",icon="X").name = sec.name
+                                row.operator("mc.deletesection",text="",icon="X").name = sec.name
                     
                     if not sec.collapsed:
                         
@@ -1302,7 +1458,7 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                                     else:
                                         row.label(text=el.name)
                                     
-                                    sett_button = row.operator("ops.mc_propsettings", icon="PREFERENCES", text="")
+                                    sett_button = row.operator("mc.propsettings", icon="PREFERENCES", text="")
                                     sett_button.name = el.name
                                     sett_button.path = el.path
                                     sett_button.id = el.id
@@ -1310,12 +1466,12 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                                     sett_button.section = el.section
                                     
                                     row2 = row.row(align=True)
-                                    up_button = row2.operator("ops.mc_swapprops", icon="TRIA_UP", text="")
+                                    up_button = row2.operator("mc.swapprops", icon="TRIA_UP", text="")
                                     up_button.mod = True
                                     up_button.name = el.name
                                     up_button.path = el.path
                                     up_button.id = el.id
-                                    down_button = row2.operator("ops.mc_swapprops", icon="TRIA_DOWN", text="")
+                                    down_button = row2.operator("mc.swapprops", icon="TRIA_DOWN", text="")
                                     down_button.mod = False
                                     down_button.name = el.name
                                     down_button.path = el.path
@@ -1326,7 +1482,7 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                                     else:
                                         row.prop(el, "hide", text="", icon = "HIDE_OFF")
                                     
-                                    del_button = row.operator("ops.mc_removeproperty", icon="X", text="")
+                                    del_button = row.operator("mc.removeproperty", icon="X", text="")
                                     del_button.path = el.path
                                     del_button.id = el.id
                                 else:
@@ -1358,24 +1514,24 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                         
                     if obj.mc_edit_enable:
                         
-                        ssett_button = row.operator("ops.mc_sectionsettings", icon="PREFERENCES", text="")
+                        ssett_button = row.operator("mc.sectionsettings", icon="PREFERENCES", text="")
                         ssett_button.name = sec.name
                         ssett_button.icon = sec.icon
                         ssett_button.type = sec.type
                         
                         row2 = row.row(align=True)
-                        sup_button = row2.operator("ops.mc_swapsections", icon="TRIA_UP", text="")
+                        sup_button = row2.operator("mc.swapsections", icon="TRIA_UP", text="")
                         sup_button.mod = True
                         sup_button.name = sec.name
                         sup_button.icon = sec.icon
-                        sdown_button = row2.operator("ops.mc_swapsections", icon="TRIA_DOWN", text="")
+                        sdown_button = row2.operator("mc.swapsections", icon="TRIA_DOWN", text="")
                         sdown_button.mod = False
                         sdown_button.name = sec.name
                         sdown_button.icon = sec.icon
                         
-                        row.operator("ops.mc_deletesection",text="",icon="X").name = sec.name
+                        row.operator("mc.deletesection",text="",icon="X").name = sec.name
                         
-                        if not sec.collapsed and sec.outfit_enable and len(sec.collections)>0:
+                        if not sec.collapsed and len(sec.collections)>0:
                             box = layout.box()
                             if sec.outfit_enable:
                                 box.prop(sec,"outfit_body", text="Body", icon="OUTLINER_OB_MESH")
@@ -1386,7 +1542,7 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                                 for collection in sec.collections:
                                     row = box.row()
                                     row.label(text=collection.collection.name)
-                                    del_col = row.operator("ops.mc_deletecollection",text="",icon="X")
+                                    del_col = row.operator("mc.deletecollection",text="",icon="X")
                                     del_col.sec = sec.name
                                     del_col.col = collection.collection.name
                                     
@@ -1396,28 +1552,22 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                             if sec_empty:
                                 row = box.row(align=False)
                                 row.label(text="No Collection Assigned", icon="ERROR")
-                                row.operator("ops.mc_deletesection",text="",icon="X").name = sec.name
+                                row.operator("mc.deletesection",text="",icon="X").name = sec.name
                             
-                            #for collection in sec.collections:
-                                #box.label(text=collection.collection.name)
                             if len(sec.collections)>0:
                                 box.prop(sec,"collections_list", text="")
                                 box2 = box.box()
                                 if len(bpy.data.collections[sec.collections_list].objects)>0:
                                     for obj2 in bpy.data.collections[sec.collections_list].objects:
                                         row = box2.row()
-                                        #row.label(text=obj.name, icon='OUTLINER_OB_'+obj.type)
-                                        #row2 = row.row(align=True)
                                         if obj2.hide_viewport:
-                                            vop=row.operator("ops.mc_colobjvisibility",text=obj2.name, icon='OUTLINER_OB_'+obj2.type)
+                                            vop=row.operator("mc.colobjvisibility",text=obj2.name, icon='OUTLINER_OB_'+obj2.type)
                                             vop.obj = obj2.name
                                             vop.sec = sec.name
                                         else:
-                                            vop = row.operator("ops.mc_colobjvisibility",text=obj2.name, icon='OUTLINER_OB_'+obj2.type, depress = True)
+                                            vop = row.operator("mc.colobjvisibility",text=obj2.name, icon='OUTLINER_OB_'+obj2.type, depress = True)
                                             vop.obj = obj2.name
                                             vop.sec = sec.name
-                                        #row2.prop(obj,'hide_viewport',text="", emboss = False)
-                                        #row2.prop(obj,'hide_render',text="", emboss = False)
                                 else:
                                     box2.label(text="This Collection seems empty", icon="ERROR")
                                 
@@ -1435,11 +1585,11 @@ class MenuCreator_Panel(MainPanel, bpy.types.Panel):
                                                 
         else:
             box = layout.box()
-            box.label(text="No property added yet.",icon="ERROR")
+            box.label(text="No section added.",icon="ERROR")
                 
 
-class MenuCreator_Settings_Panel(MainPanel, bpy.types.Panel):
-    bl_idname = "MenuCreator_Settings_Panel"
+class PT_MenuCreator_Settings_Panel(MainPanel, bpy.types.Panel):
+    bl_idname = "PT_MenuCreator_Settings_Panel"
     bl_label = "Settings"
     
     def draw(self, context):
@@ -1466,23 +1616,27 @@ class MenuCreator_Settings_Panel(MainPanel, bpy.types.Panel):
         layout.label(text="Reset functions",icon="SETTINGS")
         box = layout.box()
         
-        #box.operator('ops.mc_cleanpropobj', text="Clean object")
-        box.operator('ops.mc_cleanpropobj', text="Reset Object", icon="ERROR").reset = True
-        #box.operator('ops.mc_cleanprop', text="Clean all objects")
-        box.operator('ops.mc_cleanprop', text="Reset All Objects", icon="ERROR").reset = True
+        box.operator('mc.cleanpropobj', text="Reset Object", icon="ERROR").reset = True
+        box.operator('mc.cleanprop', text="Reset All Objects", icon="ERROR").reset = True
 
 # Handlers
 
 @persistent
 def mc_scene_modification_handler(scene):
     """Called at every modification done to the scene."""
-    # Do stuff...
-    # I think the argument of the function is the context, but I remember having troubles using it,
-    # so I used bpy.context instead
-    # Given that this function receives almost no information from its caller, you'd need to have a list
-    # to keep track of the previously existing collections, vs the ones existing now
     
     for obj in bpy.data.objects:
+        
+        # Handler for linked custom properties
+        for prop in obj.mc_properties:
+            for link_prop in prop.linked_props:
+                if '].[' in link_prop.path + '.' + link_prop.id:
+                    exec(link_prop.path + link_prop.id + '=' + prop.path + '.' + prop.id)
+                else:
+                    exec(link_prop.path + '.' + link_prop.id + '=' + prop.path + '.' + prop.id)
+        
+        # Part checking for changes in the list collection
+        # This is needed to ensure a clean list against deletion of collections from the outliner
         for sec in obj.mc_sections:
             i = 0
             for el in sec.collections:
@@ -1495,10 +1649,12 @@ def mc_scene_modification_handler(scene):
 
 classes = (
     MC_AddProperty,
+    MC_LinkProperty,
     WM_MT_button_context,
     MC_RemoveProperty,
     MC_CleanAll,
     MC_CleanObject,
+    MC_RemoveLinkedProperty,
     MC_PropertySettings,
     MC_SwapProperty,
     MC_AddSection,
@@ -1509,10 +1665,11 @@ classes = (
     MC_DeleteSection,
     MC_CollectionObjectVisibility,
     MC_InitialConfiguration,
+    OUTLINER_MT_link_mcmenu,
     OUTLINER_MT_collection_mcmenu,
-    MenuCreator_InitialConfiguration_Panel,
-    MenuCreator_Panel,
-    MenuCreator_Settings_Panel
+    PT_MenuCreator_InitialConfiguration_Panel,
+    PT_MenuCreator_Panel,
+    PT_MenuCreator_Settings_Panel
 )
 
 def register():
@@ -1522,12 +1679,13 @@ def register():
         register_class(cls)
     
     bpy.types.WM_MT_button_context.append(menu_func)
+    bpy.types.WM_MT_button_context.append(menu_func_link)
     bpy.types.OUTLINER_MT_collection.append(mc_collection_menu)
     
     # Handlers
-    bpy.app.handlers.depsgraph_update_post.append(mc_scene_modification_handler) # When a modif is done to the scene
-    bpy.app.handlers.redo_post.append(mc_scene_modification_handler) # After a redo is done
-    bpy.app.handlers.undo_post.append(mc_scene_modification_handler) # Undo
+    bpy.app.handlers.depsgraph_update_post.append(mc_scene_modification_handler)
+    bpy.app.handlers.redo_post.append(mc_scene_modification_handler)
+    bpy.app.handlers.undo_post.append(mc_scene_modification_handler)
 
 def unregister():
     
@@ -1536,7 +1694,13 @@ def unregister():
         unregister_class(cls)
     
     bpy.types.WM_MT_button_context.remove(menu_func)
+    bpy.types.WM_MT_button_context.remove(menu_func_link)
     bpy.types.OUTLINER_MT_collection.remove(mc_collection_menu)
+    
+    # Handlers
+    bpy.app.handlers.depsgraph_update_post.remove(mc_scene_modification_handler)
+    bpy.app.handlers.redo_post.remove(mc_scene_modification_handler)
+    bpy.app.handlers.undo_post.remove(mc_scene_modification_handler)
 
 if __name__ == "__main__":
     register()
