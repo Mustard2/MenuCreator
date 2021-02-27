@@ -14,6 +14,8 @@ This addon can be useful both for Blender users, to expose the properties in a h
 
 - add all the properties you want to the menu simply right clicking on any property
 
+- link properties so they always have the same value
+
 - collection functionality: you can create a list of collections from which the menu will list the contained objects
 
 - outfit functionality: as an extension of the collection functionality, it is possible to enable auto-masking of the objects listed in the menu. This means that you can define a Body object, and its mask modifiers will be activated when you show an Object in the collection list
