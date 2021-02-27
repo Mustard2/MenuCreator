@@ -1,7 +1,7 @@
 # Menu Creator
 A Blender addon to quickly create custom menus for any Object.
 
-This addon can be useful both for Blender users, to expose the properties in a handy and clean Menu, and for content creators who want to include a Menu. And, in the latter case, since the Menu is fully customizable, contect creators users will also be able to furtherly customize the Menu!
+This addon can be useful both for Blender users, to expose the properties in a handy and clean Menu, and for content creators who want to include a Menu to their models. Moreover, in the latter case, since the Menu is fully customizable, users of these models will also be able to furtherly customize the Menu without knowing anything about Python!
 
 ## Features
 - create a menu for any Blender object (one for each Object you want)
