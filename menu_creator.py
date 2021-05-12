@@ -715,7 +715,7 @@ class MC_PropertySettings(bpy.types.Operator):
     icon : bpy.props.EnumProperty(name='Icon',
         description="Choose the icon.\nNote that the icon name MUST respect Blender convention. All the icons can be found in the Icon Viewer default Blender addon.",items=mc_icon_list)
     section : bpy.props.EnumProperty(name='Section',
-        description="Choose the icon.\nNote that the icon name MUST respect Blender convention. All the icons can be found in the Icon Viewer default Blender addon.",items=mc_section_list)
+        description="Choose the section of the property",items=mc_section_list)
 
     def execute(self, context):
         
