@@ -29,7 +29,7 @@ class OUTLINER_MT_collection(bpy.types.Menu):
 
 # Operator to create the list of sections when right clicking on the property -> Link to property
 class OUTLINER_MT_link_mcmenu(bpy.types.Menu):
-    bl_idname = 'mc.menu_link'
+    bl_idname = 'OUTLINER_MT_mc_link_property'
     bl_label = 'Link to Property'
 
     def draw(self, context):
@@ -54,7 +54,7 @@ class OUTLINER_MT_link_mcmenu(bpy.types.Menu):
 
 # Operator to create the list of sections when right clicking on the collection -> Add collection to Section
 class OUTLINER_MT_collection_mcmenu(bpy.types.Menu):
-    bl_idname = 'mc.menu_collection'
+    bl_idname = 'OUTLINER_MT_mc_add_collection'
     bl_label = 'Add Collection to Section'
 
     def draw(self, context):

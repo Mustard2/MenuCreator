@@ -22,8 +22,8 @@ class MainPanel:
     bl_region_type = "UI"
     bl_category = "Menu"
 
-class PT_MenuCreator_InitialConfiguration_Panel(MainPanel, bpy.types.Panel):
-    bl_idname = "PT_MenuCreator_InitialConfiguration_Panel"
+class OBJECT_PT_MenuCreator_InitialConfiguration_Panel(MainPanel, bpy.types.Panel):
+    bl_idname = "OBJECT_PT_MenuCreator_InitialConfiguration_Panel"
     bl_label = "Initial Configuration"
     
     @classmethod
@@ -48,8 +48,8 @@ class PT_MenuCreator_InitialConfiguration_Panel(MainPanel, bpy.types.Panel):
         
         layout.operator('mc.initialconfig', text="Create Menu")
 
-class PT_MenuCreator_Panel(MainPanel, bpy.types.Panel):
-    bl_idname = "PT_MenuCreator_Panel"
+class OBJECT_PT_MenuCreator_Panel(MainPanel, bpy.types.Panel):
+    bl_idname = "OBJECT_PT_MenuCreator_Panel"
     bl_label = "Menu"
     
     @classmethod
@@ -295,8 +295,8 @@ class PT_MenuCreator_Panel(MainPanel, bpy.types.Panel):
             box.label(text="No section added.",icon="ERROR")
                 
 
-class PT_MenuCreator_Settings_Panel(MainPanel, bpy.types.Panel):
-    bl_idname = "PT_MenuCreator_Settings_Panel"
+class OBJECT_PT_MenuCreator_Settings_Panel(MainPanel, bpy.types.Panel):
+    bl_idname = "OBJECT_PT_MenuCreator_Settings_Panel"
     bl_label = "Settings"
     
     def draw(self, context):
@@ -327,9 +327,9 @@ class PT_MenuCreator_Settings_Panel(MainPanel, bpy.types.Panel):
         box.operator('mc.cleanprop', text="Reset All Objects", icon="ERROR").reset = True
 
 classes = (
-    PT_MenuCreator_InitialConfiguration_Panel,
-    PT_MenuCreator_Panel,
-    PT_MenuCreator_Settings_Panel
+    OBJECT_PT_MenuCreator_InitialConfiguration_Panel,
+    OBJECT_PT_MenuCreator_Panel,
+    OBJECT_PT_MenuCreator_Settings_Panel
 )
 
 def register():
