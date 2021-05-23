@@ -60,4 +60,4 @@ def unregister():
     del bpy.types.Object.mc_edit_enable
     del bpy.types.Object.mc_enable
     del bpy.types.Scene.mc_settings
-    bpy.utils.register_class(MC_Settings)
+    bpy.utils.unregister_class(MC_Settings)
