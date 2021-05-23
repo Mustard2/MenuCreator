@@ -35,13 +35,7 @@ class MC_AddProperty(bpy.types.Operator):
                 self.report({'WARNING'}, 'Menu Creator - Invalid selection.')
                 return {'FINISHED'}
             
-            rna, path = context.window_manager.clipboard.rsplit('.', 1)
-            if '][' in path:
-                path, rem = path.rsplit('[', 1)
-                rna = rna + '.' + path
-                path = '[' + rem
-            elif '[' in path:
-                path, rem = path.rsplit('[', 1)
+            rna, path = split_path(context.window_manager.clipboard)
             
             if obj.mc_enable:
             
@@ -90,13 +84,7 @@ class MC_LinkProperty(bpy.types.Operator):
                 self.report({'WARNING'}, 'Menu Creator - Invalid selection.')
                 return {'FINISHED'}
             
-            rna, path = context.window_manager.clipboard.rsplit('.', 1)
-            if '][' in path:
-                path, rem = path.rsplit('[', 1)
-                rna = rna + '.' + path
-                path = '[' + rem
-            elif '[' in path:
-                path, rem = path.rsplit('[', 1)
+            rna, path = split_path(context.window_manager.clipboard)
             
             if obj.mc_enable:
         
