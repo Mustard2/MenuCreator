@@ -23,7 +23,7 @@ This addon can be useful both for Blender users, to expose the properties in a h
 ## Installation
 You can find the latest version in the [Releases page of this repository](https://github.com/Mustard2/MenuCreator/releases).
 
-Alternatively, you can ownload the whole repository as a zip file (or clone it locally), and then install the .py file (**not the .zip file, you must unzip it and use the Python file!**).
+To install the add-on, download the source code as a zip file and install it through Blender's preferences.
 
 ## Instructions
 - create a Menu clicking on an Object and initializing the Menu
