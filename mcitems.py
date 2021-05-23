@@ -1,6 +1,6 @@
 
 import bpy
-import mcdata
+from . import mcdata
 
 # Class to store collections for section informations
 class MCCollectionItem(bpy.types.PropertyGroup):

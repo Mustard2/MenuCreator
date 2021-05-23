@@ -1,6 +1,6 @@
 import bpy
-from mccolutils import *
-from mcutils import *
+from .mccolutils import *
+from .mcutils import *
 
 # Poll functions
 

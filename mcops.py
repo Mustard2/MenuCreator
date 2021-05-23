@@ -1,7 +1,7 @@
 import bpy
-import mcdata
-from mcutils import *
-from mccolutils import *
+from . import mcdata
+from .mcutils import *
+from .mccolutils import *
 
 # Operator to add the right click button on properties
 class MC_AddProperty(bpy.types.Operator):

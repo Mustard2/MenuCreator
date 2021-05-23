@@ -1,5 +1,5 @@
 import bpy
-import mcops
+from . import mcops
 
 class WM_MT_button_context(bpy.types.Menu):
     bl_label = "Custom Action"

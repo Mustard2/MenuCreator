@@ -14,12 +14,12 @@ bl_info = {
 
 import bpy
 from bpy.app.handlers import persistent
-from mcdata import *
-import mcitems
-import mcops
-import mcpanels
-import mcsettings
-import mcmenu
+from .mcdata import *
+from . import mcitems
+from . import mcops
+from . import mcpanels
+from . import mcsettings
+from . import mcmenu
 
 # USER INTERFACE
 
